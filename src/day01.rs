@@ -1,27 +1,68 @@
-use std::fs;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
+
+fn process_elves_calories_file(path: &str) -> anyhow::Result<Vec<Vec<u32>>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let result = reader
+        .lines()
+        .fold((vec![], vec![]), |acc: (Vec<Vec<u32>>, Vec<u32>), line| {
+            let (mut elves, mut current) = acc;
+            match line {
+                Ok(l) => match l.parse::<u32>() {
+                    Ok(i) => {
+                        current.push(i);
+
+                        (elves, current)
+                    }
+                    Err(_) => {
+                        if !current.is_empty() {
+                            elves.push(current);
+                        }
+
+                        (elves, vec![])
+                    }
+                },
+                Err(_) => {
+                    println!("no line");
+                    todo!()
+                }
+            }
+        });
+
+    Ok(result.0)
+}
+
+fn extract_top_3(elves: Vec<Vec<u32>>) -> Vec<u32> {
+    let mut leaderboard = elves.iter().fold(vec![], |acc: Vec<u32>, elve| {
+        let mut lb = acc;
+        lb.push(elve.iter().sum());
+
+        lb
+    });
+    leaderboard.sort_by(|a, b| b.cmp(a));
+    leaderboard.truncate(3);
+
+    leaderboard
+}
 
 pub fn day01() -> anyhow::Result<()> {
-  let contents = fs::read_to_string("data/day01.txt")
-  .expect("Should have been able to read the file");
+    let elves = process_elves_calories_file("data/day01.txt")?;
+    let elves_top_3 = extract_top_3(elves);
 
-  let result = contents.lines().fold((0,0), |acc, line| {
-      let (max, current) = acc;
-      match line.parse::<i32>()  {
-          Ok(i) => {
-              let actual = current+i;
-              if actual > max {
-                  (actual, actual)
-              } else {
-                  (max, actual)
-              }
-          },
-          Err(_) => (max, 0)
-      }
-  });
+    println!(
+        "Day 1 - How many total Calories is that Elf carrying? {:?}",
+        elves_top_3.first().unwrap()
+    );
+    println!(
+        "Day 1 - How many Calories are those Elves carrying in total? {:?}",
+        elves_top_3
+            .iter()
+            .fold(0, |acc: u32, eleve_calories| acc + eleve_calories)
+    );
 
-  let (max, _) = result;
-
-  println!("Day 1 - How many total Calories is that Elf carrying? {:?}", max);
-
-  Ok(())
+    Ok(())
 }
