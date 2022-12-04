@@ -61,7 +61,7 @@ pub fn day01() -> anyhow::Result<()> {
         "Day 1 - How many Calories are those Elves carrying in total? {:?}",
         elves_top_3
             .iter()
-            .fold(0, |acc: u32, eleve_calories| acc + eleve_calories)
+            .sum::<u32>()
     );
 
     Ok(())

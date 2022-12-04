@@ -63,7 +63,7 @@ enum Winner {
 }
 
 impl Winner {
-    fn score(&self) -> i32{
+    fn score(&self) -> i32 {
         match self {
             Winner::Player2 => 6,
             Winner::Draw => 3,
@@ -104,8 +104,14 @@ fn load_strategies_file(path: &str) -> anyhow::Result<Vec<Strategy>> {
         .map(|line| {
             let l = line?;
             let mut split = l.split_whitespace();
-            let player1 = split.next().ok_or_else(|| anyhow!("error player 1"))?.parse()?;
-            let player2 = split.next().ok_or_else(|| anyhow!("error player 2"))?.parse()?;
+            let player1 = split
+                .next()
+                .ok_or_else(|| anyhow!("error player 1"))?
+                .parse()?;
+            let player2 = split
+                .next()
+                .ok_or_else(|| anyhow!("error player 2"))?
+                .parse()?;
 
             Ok(Strategy { player1, player2 })
         })
@@ -115,7 +121,7 @@ fn load_strategies_file(path: &str) -> anyhow::Result<Vec<Strategy>> {
 #[derive(Debug)]
 struct StrategyWithExpectation {
     player1: Player1,
-    expected_winner: Winner
+    expected_winner: Winner,
 }
 
 impl StrategyWithExpectation {
@@ -129,7 +135,7 @@ impl StrategyWithExpectation {
             (Winner::Player1, Player1::Scissors) => Player2::Paper,
             (Winner::Draw, Player1::Rock) => Player2::Rock,
             (Winner::Draw, Player1::Paper) => Player2::Paper,
-            (Winner::Draw, Player1::Scissors) => Player2::Scissors
+            (Winner::Draw, Player1::Scissors) => Player2::Scissors,
         }
     }
 
@@ -151,7 +157,9 @@ impl FromStr for Winner {
     }
 }
 
-fn load_strategies_with_expectations_file(path: &str) -> anyhow::Result<Vec<StrategyWithExpectation>> {
+fn load_strategies_with_expectations_file(
+    path: &str,
+) -> anyhow::Result<Vec<StrategyWithExpectation>> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     reader
@@ -159,10 +167,19 @@ fn load_strategies_with_expectations_file(path: &str) -> anyhow::Result<Vec<Stra
         .map(|line| {
             let l = line?;
             let mut split = l.split_whitespace();
-            let player1 = split.next().ok_or_else(|| anyhow!("error player 1"))?.parse()?;
-            let expected_winner = split.next().ok_or_else(|| anyhow!("error expected_winner"))?.parse()?;
+            let player1 = split
+                .next()
+                .ok_or_else(|| anyhow!("error player 1"))?
+                .parse()?;
+            let expected_winner = split
+                .next()
+                .ok_or_else(|| anyhow!("error expected_winner"))?
+                .parse()?;
 
-            Ok(StrategyWithExpectation { player1, expected_winner })
+            Ok(StrategyWithExpectation {
+                player1,
+                expected_winner,
+            })
         })
         .collect()
 }
