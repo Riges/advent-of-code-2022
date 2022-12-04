@@ -12,16 +12,6 @@ enum Player1 {
     Scissors,
 }
 
-impl Player1 {
-    fn score(&self) -> i32 {
-        match self {
-            Player1::Rock => 1,
-            Player1::Paper => 2,
-            Player1::Scissors => 3,
-        }
-    }
-}
-
 impl FromStr for Player1 {
     type Err = anyhow::Error;
 
@@ -72,6 +62,16 @@ enum Winner {
     Draw,
 }
 
+impl Winner {
+    fn score(&self) -> i32{
+        match self {
+            Winner::Player2 => 6,
+            Winner::Draw => 3,
+            _ => 0,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Strategy {
     player1: Player1,
@@ -92,13 +92,7 @@ impl Strategy {
     }
 
     fn score(&self) -> i32 {
-        let round_score = match self.winner() {
-            Winner::Player2 => 6,
-            Winner::Draw => 3,
-            _ => 0,
-        };
-
-        self.player2.score() + round_score
+        self.player2.score() + self.winner().score()
     }
 }
 
@@ -118,10 +112,67 @@ fn load_strategies_file(path: &str) -> anyhow::Result<Vec<Strategy>> {
         .collect()
 }
 
+#[derive(Debug)]
+struct StrategyWithExpectation {
+    player1: Player1,
+    expected_winner: Winner
+}
+
+impl StrategyWithExpectation {
+    fn expected_player2(&self) -> Player2 {
+        match (&self.expected_winner, &self.player1) {
+            (Winner::Player2, Player1::Rock) => Player2::Paper,
+            (Winner::Player2, Player1::Paper) => Player2::Scissors,
+            (Winner::Player2, Player1::Scissors) => Player2::Rock,
+            (Winner::Player1, Player1::Rock) => Player2::Scissors,
+            (Winner::Player1, Player1::Paper) => Player2::Rock,
+            (Winner::Player1, Player1::Scissors) => Player2::Paper,
+            (Winner::Draw, Player1::Rock) => Player2::Rock,
+            (Winner::Draw, Player1::Paper) => Player2::Paper,
+            (Winner::Draw, Player1::Scissors) => Player2::Scissors
+        }
+    }
+
+    fn score(&self) -> i32 {
+        self.expected_player2().score() + self.expected_winner.score()
+    }
+}
+
+impl FromStr for Winner {
+    type Err = anyhow::Error;
+
+    fn from_str(letter: &str) -> Result<Winner, Self::Err> {
+        match letter {
+            "Y" => Ok(Winner::Draw),
+            "X" => Ok(Winner::Player1),
+            "Z" => Ok(Winner::Player2),
+            _ => Err(anyhow!("Don't understand expectation: {}", letter)),
+        }
+    }
+}
+
+fn load_strategies_with_expectations_file(path: &str) -> anyhow::Result<Vec<StrategyWithExpectation>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    reader
+        .lines()
+        .map(|line| {
+            let l = line?;
+            let mut split = l.split_whitespace();
+            let player1 = split.next().ok_or_else(|| anyhow!("error player 1"))?.parse()?;
+            let expected_winner = split.next().ok_or_else(|| anyhow!("error expected_winner"))?.parse()?;
+
+            Ok(StrategyWithExpectation { player1, expected_winner })
+        })
+        .collect()
+}
+
 pub fn day02() -> anyhow::Result<()> {
     let strategies = load_strategies_file("data/day02.txt")?;
+    println!("Part 1 - What would your total score be if everything goes exactly according to your strategy guide? {:?}", strategies.iter().map(|s| s.score()).sum::<i32>());
 
-    println!("What would your total score be if everything goes exactly according to your strategy guide? {:?}", strategies.iter().map(|s| s.score()).sum::<i32>());
+    let strategies_with_expectation = load_strategies_with_expectations_file("data/day02.txt")?;
+    println!("Part 2 - What would your total score be if everything goes exactly according to your strategy guide? {:?}", strategies_with_expectation.iter().map(|s| s.score()).sum::<i32>());
 
     Ok(())
 }
@@ -243,6 +294,34 @@ mod tests {
     }
 
     #[test]
+    fn samples_for_expecteds() {
+        assert_eq!(
+            StrategyWithExpectation {
+                player1: Player1::Rock,
+                expected_winner: Winner::Draw
+            }
+            .score(),
+            4
+        );
+        assert_eq!(
+            StrategyWithExpectation {
+                player1: Player1::Paper,
+                expected_winner: Winner::Player1
+            }
+            .score(),
+            1
+        );
+        assert_eq!(
+            StrategyWithExpectation {
+                player1: Player1::Scissors,
+                expected_winner: Winner::Player2
+            }
+            .score(),
+            7
+        );
+    }
+
+    #[test]
     fn player1_should_be_parsed() {
         let result: Player1 = "A".parse().unwrap();
         assert_eq!(result, Player1::Rock);
@@ -260,5 +339,15 @@ mod tests {
         assert_eq!(result, Player2::Rock);
         let result: Player2 = "Z".parse().unwrap();
         assert_eq!(result, Player2::Scissors);
+    }
+
+    #[test]
+    fn expected_winning_should_be_parsed() {
+        let result: Winner = "X".parse().unwrap();
+        assert_eq!(result, Winner::Player1);
+        let result: Winner = "Y".parse().unwrap();
+        assert_eq!(result, Winner::Draw);
+        let result: Winner = "Z".parse().unwrap();
+        assert_eq!(result, Winner::Player2);
     }
 }
