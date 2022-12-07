@@ -41,7 +41,7 @@ fn parse_crate_row(row: &str) -> Vec<Option<Crate>>{
   .collect::<Vec<Option<Crate>>>()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Stack  {
   crates: Vec<Crate>
 }
@@ -60,16 +60,21 @@ impl Stack {
   }
 }
 
-#[derive(Debug)]
+enum CraneType {
+  CrateMover9000,
+  CrateMover9001
+}
+
+#[derive(Debug, Clone)]
 struct Cargo {
   stacks: HashMap<usize, Stack>
 }
 
 impl Cargo {
-  fn apply_series(&mut self, serie: &Serie) -> anyhow::Result<()> {
+  fn apply_serie(&mut self, serie: &Serie, crane_type: CraneType) -> anyhow::Result<()> {
     let origin = self.stacks.get_mut(&serie.origin).ok_or_else(|| anyhow!("Invalid serie: origin stack not found"))?;
 
-    let to_add = (0..serie.quantity).fold(vec![], | acc: Vec<Crate>, _ | {
+    let mut to_add = (0..serie.quantity).fold(vec![], | acc: Vec<Crate>, _ | {
       let mut acc = acc;
       if let Some(crate_) = origin.remove() {
         acc.push(crate_);
@@ -82,8 +87,21 @@ impl Cargo {
 
     let destination = self.stacks.get_mut(&serie.destination).ok_or_else(|| anyhow!("Invalid serie: destination stack not found"))?;
 
-    for crate_ in to_add {
-      destination.add(&crate_);
+    match crane_type {
+      CraneType::CrateMover9000 => {
+        for crate_ in to_add {
+          destination.add(&crate_);
+        }
+      },
+      CraneType::CrateMover9001 => {
+        loop  {
+          let crate_ = to_add.pop();
+          match crate_ {
+            Some(crate_) => destination.add(&crate_),
+            None => break
+          }
+        }
+      }
     }
 
     Ok(())
@@ -101,7 +119,7 @@ impl Cargo {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Serie {
   quantity: u32,
   origin: usize,
@@ -180,10 +198,19 @@ fn load_from_file(path: &str) -> anyhow::Result<(Cargo, Vec<Serie>)>
 pub fn day05() -> anyhow::Result<()> {
   let (mut cargo, series) = load_from_file("data/day05.txt")?;
 
+  let mut cargo_part2 = cargo.clone();
+  let series_part2 = series.clone();
+
   for serie in series {
-    cargo.apply_series(&serie)?;
+    cargo.apply_serie(&serie, CraneType::CrateMover9000)?;
   }
+
   println!("Day05 part1: {}", cargo.get_crate_in_top());
+
+  for serie in series_part2 {
+    cargo_part2.apply_serie(&serie, CraneType::CrateMover9001)?;
+  }
+  println!("Day05 part1: {}", cargo_part2.get_crate_in_top());
 
   Ok(())
 }
