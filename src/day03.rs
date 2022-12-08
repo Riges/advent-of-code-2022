@@ -14,7 +14,9 @@ struct Rucksacks {
 impl Rucksacks {
     fn get_duplicate_item(&self) -> Option<char> {
         let compartment2_items: Vec<char> = self.compartment2.chars().collect();
-        self.compartment1.chars().find(|&c| compartment2_items.contains(&c))
+        self.compartment1
+            .chars()
+            .find(|&c| compartment2_items.contains(&c))
     }
 
     fn get_all_items(&self) -> String {

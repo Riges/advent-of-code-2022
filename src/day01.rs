@@ -59,9 +59,7 @@ pub fn day01() -> anyhow::Result<()> {
     );
     println!(
         "Day 1 - How many Calories are those Elves carrying in total? {:?}",
-        elves_top_3
-            .iter()
-            .sum::<u32>()
+        elves_top_3.iter().sum::<u32>()
     );
 
     Ok(())
