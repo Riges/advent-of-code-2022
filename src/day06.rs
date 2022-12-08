@@ -5,33 +5,20 @@ use std::{
 };
 
 fn load_data_stream(path: &str) -> anyhow::Result<String> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-    let mut data = String::new();
-    for line in reader.lines() {
-        match line {
-            Ok(line) => {
-                data.push_str(&line);
-                break;
-            }
-            Err(_) => return Err(anyhow!("Error reading line")),
-        }
-    }
-
-    Ok(data)
+    Ok(BufReader::new(File::open(path)?)
+        .lines()
+        .next()
+        .ok_or_else(|| anyhow!("No data found"))??)
 }
 
 fn subroutine(data_stream: &str, marker_size: usize) -> usize {
     let mut marker: Vec<char> = vec![];
     let mut marker_index = 0;
     for (index, letter) in data_stream.chars().enumerate() {
-        match marker.iter().position(|&c| c == letter) {
-            Some(position) => {
-                for _ in 0..=position {
-                    marker.remove(0);
-                }
+        if let Some(position) = marker.iter().position(|&c| c == letter) {
+            for _ in 0..=position {
+                marker.remove(0);
             }
-            None => {}
         }
 
         marker.push(letter);

@@ -94,8 +94,6 @@ impl Cargo {
             acc
         });
 
-        drop(origin);
-
         let destination = self
             .stacks
             .get_mut(&serie.destination)
