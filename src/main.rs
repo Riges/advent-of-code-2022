@@ -5,6 +5,7 @@ mod day04;
 mod day05;
 mod day06;
 mod day07;
+mod day08;
 
 #[allow(dead_code)]
 fn previous_days() {
@@ -14,8 +15,9 @@ fn previous_days() {
     day04::day04().unwrap();
     day05::day05().unwrap();
     day06::day06().unwrap();
+    day07::day07().unwrap();
 }
 
 fn main() {
-    day07::day07().unwrap();
+    day08::day08().unwrap();
 }
