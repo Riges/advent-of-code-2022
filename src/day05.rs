@@ -309,7 +309,7 @@ mod tests {
                 ],
             },
         );
-        let cargo = Cargo { stacks: stacks };
+        let cargo = Cargo { stacks };
 
         assert_eq!(cargo.get_crate_in_top(), "CMZ");
     }

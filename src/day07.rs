@@ -98,7 +98,7 @@ impl FileSystem {
         let name = self.pwd().split('/').last().unwrap().to_string();
         self.directories
             .entry(self.pwd())
-            .or_insert(Directory::new(name, path))
+            .or_insert_with(|| Directory::new(name, path))
     }
 
     fn create_file_to_current_directory(&mut self, file: File) {
@@ -155,13 +155,12 @@ fn compute_directory_size(fs: &FileSystem, dir: &Directory) -> u64 {
 
     for directory_name in dir.directories.iter() {
         let mut sub_dir_path = format!("{}/{}", dir.path, directory_name).to_owned();
-        if dir.name == "" {
+        if dir.name.is_empty() {
             sub_dir_path = format!("/{}", directory_name).to_owned();
-        } else {
         }
-        match fs.directories.get(&sub_dir_path) {
-            Some(dir) => size += compute_directory_size(fs, dir),
-            None => {}
+
+        if let Some(dir) = fs.directories.get(&sub_dir_path) {
+            size += compute_directory_size(fs, dir)
         }
     }
 

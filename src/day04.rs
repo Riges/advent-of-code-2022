@@ -92,22 +92,16 @@ mod tests {
 
     #[test]
     fn should_be_fully_contained() {
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 2, end: 8 },
-                second: SectionAssigment { start: 3, end: 7 }
-            }
-            .fully_contained(),
-            true
-        );
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 6, end: 6 },
-                second: SectionAssigment { start: 4, end: 6 }
-            }
-            .fully_contained(),
-            true
-        );
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 2, end: 8 },
+            second: SectionAssigment { start: 3, end: 7 }
+        }
+        .fully_contained());
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 6, end: 6 },
+            second: SectionAssigment { start: 4, end: 6 }
+        }
+        .fully_contained());
     }
 
     #[test]
@@ -128,37 +122,25 @@ mod tests {
             .have_overlap(),
             false
         );
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 5, end: 7 },
-                second: SectionAssigment { start: 7, end: 9 }
-            }
-            .have_overlap(),
-            true
-        );
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 2, end: 8 },
-                second: SectionAssigment { start: 3, end: 7 }
-            }
-            .have_overlap(),
-            true
-        );
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 6, end: 6 },
-                second: SectionAssigment { start: 4, end: 6 }
-            }
-            .have_overlap(),
-            true
-        );
-        assert_eq!(
-            SectionAssigmentPair {
-                first: SectionAssigment { start: 2, end: 6 },
-                second: SectionAssigment { start: 4, end: 8 }
-            }
-            .have_overlap(),
-            true
-        );
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 5, end: 7 },
+            second: SectionAssigment { start: 7, end: 9 }
+        }
+        .have_overlap());
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 2, end: 8 },
+            second: SectionAssigment { start: 3, end: 7 }
+        }
+        .have_overlap());
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 6, end: 6 },
+            second: SectionAssigment { start: 4, end: 6 }
+        }
+        .have_overlap());
+        assert!(SectionAssigmentPair {
+            first: SectionAssigment { start: 2, end: 6 },
+            second: SectionAssigment { start: 4, end: 8 }
+        }
+        .have_overlap());
     }
 }

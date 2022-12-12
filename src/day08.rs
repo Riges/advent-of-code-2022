@@ -21,7 +21,7 @@ fn load_trees_v2(path: &str) -> anyhow::Result<Vec<Vec<i32>>> {
 }
 
 fn tree_is_visible(tree: i32, others: Vec<i32>) -> bool {
-    others.iter().any(|t| *t >= tree) == false
+    !others.iter().any(|t| *t >= tree)
 }
 
 fn count_visible_trees(trees: &Vec<Vec<i32>>) -> i32 {
@@ -37,13 +37,13 @@ fn count_visible_trees(trees: &Vec<Vec<i32>>) -> i32 {
                 continue;
             }
 
-            let previous_col: Vec<i32> = trees[row][0..col].iter().map(|t| *t).collect();
+            let previous_col: Vec<i32> = trees[row][0..col].to_vec();
             if tree_is_visible(*tree, previous_col) {
                 count += 1;
                 continue;
             }
 
-            let next_col: Vec<i32> = trees[row][col + 1..].iter().map(|t| *t).collect();
+            let next_col: Vec<i32> = trees[row][col + 1..].to_vec();
             if tree_is_visible(*tree, next_col) {
                 count += 1;
                 continue;
