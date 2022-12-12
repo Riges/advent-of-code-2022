@@ -1,154 +1,75 @@
-use std::fmt::Debug;
 use std::{
-    fmt::Formatter,
     fs::File,
     io::{BufRead, BufReader},
 };
 
-use itertools::Itertools;
-
-#[derive(Clone)]
-struct Point {
-    col: i32,
-    row: i32,
-}
-
-impl Debug for Point {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(row : {}, Col :{})", self.row, self.col,)
-    }
-}
-
-#[derive(Debug, Clone)]
-struct Tree {
-    position: Point,
-    size: i32,
-}
-
-fn load_trees(path: &str) -> anyhow::Result<Vec<Tree>> {
-    let mut trees: Vec<Tree> = vec![];
+fn load_trees_v2(path: &str) -> anyhow::Result<Vec<Vec<i32>>> {
+    let mut trees: Vec<Vec<i32>> = vec![];
     let file = File::open(path)?;
     let reader = BufReader::new(file);
-    for (row, line) in reader.lines().enumerate() {
-        for (col, char) in line?.chars().enumerate() {
-            trees.push(Tree {
-                position: Point {
-                    col: (col as i32) + 1,
-                    row: (row as i32) + 1,
-                },
-                size: char.to_digit(10).unwrap() as i32,
-            });
-        }
+    for line in reader.lines() {
+        let line = line?;
+        let row: Vec<i32> = line
+            .chars()
+            .map(|c| c.to_digit(10).unwrap() as i32)
+            .collect();
+
+        trees.push(row);
     }
 
     Ok(trees)
 }
 
-fn find_neighbors(
-    trees: &Vec<Tree>,
-    tree: &Tree,
-) -> (Option<Tree>, Option<Tree>, Option<Tree>, Option<Tree>) {
-    let mut neighbors: (Option<Tree>, Option<Tree>, Option<Tree>, Option<Tree>) =
-        (None, None, None, None);
-    for t in trees {
-        if t.position.col == tree.position.col && t.position.row == tree.position.row - 1 {
-            neighbors.0 = Some(t.clone());
-        }
-        if t.position.col == tree.position.col && t.position.row == tree.position.row + 1 {
-            neighbors.1 = Some(t.clone());
-        }
-        if t.position.col == tree.position.col - 1 && t.position.row == tree.position.row {
-            neighbors.2 = Some(t.clone());
-        }
-        if t.position.col == tree.position.col + 1 && t.position.row == tree.position.row {
-            neighbors.3 = Some(t.clone());
-        }
-    }
-
-    neighbors
+fn tree_is_visible(tree: i32, others: Vec<i32>) -> bool {
+    others.iter().any(|t| *t >= tree) == false
 }
 
-fn is_visible(trees: &Vec<Tree>, tree: &Tree) -> bool {
-    let tree_in_same_row: Vec<Tree> = trees
-        .iter()
-        .filter(|t| t.position.row == tree.position.row)
-        .map(|t| t.to_owned())
-        .collect();
-    let tree_in_same_col: Vec<Tree> = trees
-        .iter()
-        .filter(|t| t.position.col == tree.position.col)
-        .map(|t| t.to_owned())
-        .collect();
+fn count_visible_trees(trees: &Vec<Vec<i32>>) -> i32 {
+    let mut count = 0;
+    for (row, line) in trees.iter().enumerate() {
+        if row == 0 || row == trees.len() - 1 {
+            count += line.len() as i32;
+            continue;
+        }
+        for (col, tree) in line.iter().enumerate() {
+            if col == 0 || col == line.len() - 1 {
+                count += 1;
+                continue;
+            }
 
-    let before_on_row: Vec<Tree> = tree_in_same_row
-        .iter()
-        .filter(|t| t.position.col < tree.position.col)
-        .map(|t| t.to_owned())
-        .collect();
-    let after_on_row: Vec<Tree> = tree_in_same_row
-        .iter()
-        .filter(|t| t.position.col > tree.position.col)
-        .map(|t| t.to_owned())
-        .collect();
-    let before_on_col: Vec<Tree> = tree_in_same_col
-        .iter()
-        .filter(|t| t.position.row < tree.position.row)
-        .map(|t| t.to_owned())
-        .collect();
-    let after_on_col: Vec<Tree> = tree_in_same_col
-        .iter()
-        .filter(|t| t.position.row > tree.position.row)
-        .map(|t| t.to_owned())
-        .collect();
+            let previous_col: Vec<i32> = trees[row][0..col].iter().map(|t| *t).collect();
+            if tree_is_visible(*tree, previous_col) {
+                count += 1;
+                continue;
+            }
 
-    let predicate = |t: &&Tree| t.size < tree.size;
+            let next_col: Vec<i32> = trees[row][col + 1..].iter().map(|t| *t).collect();
+            if tree_is_visible(*tree, next_col) {
+                count += 1;
+                continue;
+            }
 
-    if before_on_row.iter().filter(predicate).count() == before_on_row.len()
-        || after_on_row.iter().filter(predicate).count() == after_on_row.len()
-        || before_on_col.iter().filter(predicate).count() == before_on_col.len()
-        || after_on_col.iter().filter(predicate).count() == after_on_col.len()
-    {
-        return true;
+            let previous_rows_in_same_col: Vec<i32> =
+                trees[0..row].iter().map(|r| r[col]).collect();
+            if tree_is_visible(*tree, previous_rows_in_same_col) {
+                count += 1;
+                continue;
+            }
+
+            let next_rows_in_same_col: Vec<i32> = trees[row + 1..].iter().map(|r| r[col]).collect();
+            if tree_is_visible(*tree, next_rows_in_same_col) {
+                count += 1;
+                continue;
+            }
+        }
     }
 
-    false
-}
-
-fn is_the_edge(trees: &Vec<Tree>, tree: &Tree) -> bool {
-    let neighbors = find_neighbors(&trees, &tree);
-
-    if neighbors.0.is_none()
-        || neighbors.1.is_none()
-        || neighbors.2.is_none()
-        || neighbors.3.is_none()
-    {
-        return true;
-    }
-
-    false
+    count
 }
 
 pub fn day08() -> anyhow::Result<()> {
-    let trees = load_trees("data/day08.txt")?;
+    let trees_v2 = load_trees_v2("data/day08.txt")?;
+    println!("Day 08 part 2 - {}", count_visible_trees(&trees_v2));
 
-    let visible_on_edges: i32 = trees
-        .iter()
-        .filter(|tree| is_the_edge(&trees, tree))
-        .map(|_| 1)
-        .sum();
-
-    let visible_on_grid_trees: Vec<&Tree> = trees
-        .iter()
-        .filter(|tree| is_the_edge(&trees, tree) == false)
-        .filter(|tree| is_visible(&trees, tree))
-        .collect_vec();
-
-    let visibles_on_grid: i32 = visible_on_grid_trees.iter().map(|_| 1).sum();
-
-    let total = visibles_on_grid + visible_on_edges;
-    println!(
-        "Day 08 part 1  - edges({}) + grid({}) = {} ",
-        visible_on_edges, visibles_on_grid, total
-    );
     Ok(())
 }
